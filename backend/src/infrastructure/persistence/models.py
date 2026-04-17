@@ -1,7 +1,9 @@
 from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, String, func
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+from src.domain.enums import AlertLevel, AlertMessageCode, ProcessingStatus, ScanReasonCode, ScanStatus
 
 
 class Base(DeclarativeBase):
@@ -17,8 +19,9 @@ class StoredFile(Base):
     stored_name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     mime_type: Mapped[str] = mapped_column(String(255), nullable=False)
     size: Mapped[int] = mapped_column(Integer, nullable=False)
-    processing_status: Mapped[str] = mapped_column(String(50), nullable=False, default="uploaded")
-    scan_status: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    processing_status: Mapped[ProcessingStatus] = mapped_column(String(50), nullable=False, default=ProcessingStatus.UPLOADED)
+    scan_status: Mapped[ScanStatus | None] = mapped_column(String(50), nullable=True)
+    scan_reason_codes: Mapped[list[ScanReasonCode]] = mapped_column(JSON, nullable=False, default=list)
     scan_details: Mapped[str | None] = mapped_column(String(500), nullable=True)
     metadata_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     requires_attention: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -33,17 +36,23 @@ class StoredFile(Base):
         onupdate=func.now(),
         nullable=False,
     )
+    alerts: Mapped[list["Alert"]] = relationship(
+        back_populates="file",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 
 
 class Alert(Base):
     __tablename__ = "alerts"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    file_id: Mapped[str] = mapped_column(String(36), ForeignKey("files.id"), nullable=False)
-    level: Mapped[str] = mapped_column(String(50), nullable=False)
-    message: Mapped[str] = mapped_column(String(500), nullable=False)
+    file_id: Mapped[str] = mapped_column(String(36), ForeignKey("files.id", ondelete="CASCADE"), nullable=False)
+    level: Mapped[AlertLevel] = mapped_column(String(50), nullable=False)
+    message: Mapped[AlertMessageCode] = mapped_column(String(500), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False,
     )
+    file: Mapped[StoredFile] = relationship(back_populates="alerts")

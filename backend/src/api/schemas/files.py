@@ -2,6 +2,9 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
+from src.api.schemas.common import PageParams
+from src.domain.enums import ProcessingStatus, ScanReasonCode, ScanStatus
+
 
 class FileItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -11,8 +14,9 @@ class FileItem(BaseModel):
     original_name: str
     mime_type: str
     size: int
-    processing_status: str
-    scan_status: str | None
+    processing_status: ProcessingStatus
+    scan_status: ScanStatus | None
+    scan_reason_codes: list[ScanReasonCode]
     scan_details: str | None
     metadata_json: dict | None
     requires_attention: bool
@@ -24,11 +28,5 @@ class FileUpdate(BaseModel):
     title: str
 
 
-class AlertItem(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    file_id: str
-    level: str
-    message: str
-    created_at: datetime
+class FilePage(PageParams):
+    items: list[FileItem]

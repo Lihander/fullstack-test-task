@@ -3,7 +3,7 @@ name = "backend"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.18.4",
     "asyncpg>=0.30.0",
@@ -14,3 +14,16 @@ dependencies = [
     "sqlalchemy>=2.0.48",
     "uvicorn>=0.42.0",
 ]
+
+[dependency-groups]
+dev = [
+    "aiosqlite>=0.21.0",
+    "httpx>=0.28.1",
+    "pytest>=8.4.2",
+    "pytest-asyncio>=1.2.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+pythonpath = ["."]
+testpaths = ["tests"]
